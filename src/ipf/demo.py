@@ -5,11 +5,13 @@ Version: 2014.07.17
 """
 
 from fakeutils import *
+import time
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
+fmkfile = "fmk" # fault marks (known)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -46,21 +48,27 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
+#pngDir = None
 #pngDir = "../../png/"
+pngDir = "/Users/huangherbert/Seismic/Dave_fork/Data/png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goSlopes()
+  goFakeData()
+  goSlopes()
   goScan()
   goThin()
-  #goSmooth()
-  #goSkin()
-  #goSlip()
+  goSmooth()
+  goSkin()
+  goSlip()
+  print "main done ..."
 
 def goFakeData():
+  # Added option to output a volume with features marked -- Ted Clee
+  #   Faults are flagged with +1, channels as -1
+  print "goFakeData ..."
+  tbgn = time.time()
   #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by 1 episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
@@ -71,20 +79,26 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+  mark = True # if True, output a feature mark volume
+  gx,p2,p3,fmk = FakeData.seismicAndSlopes3d2014A(
+      sequence,nplanar,conjugate,conical,impedance,wavelet,noise,mark)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
   writeImage(p3kfile,p3)
+  writeImage(fmkfile,fmk)
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
+  print "fmk min =",min(fmk)," max =",max(fmk)
   gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
-  plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  #plot3(gx,p2,cmap=bwrNotch(1.0))
-  #plot3(gx,p3,cmap=bwrNotch(1.0))
+  plot3(gx,title="Constructed seismic data",cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
+  plot3(gx,p2,cmap=bwrNotch(1.0),title="Constructed slopes p2")
+  plot3(gx,p3,cmap=bwrNotch(1.0),title="Constructed slopes p3")
+  plot3(gx,fmk,cmap=bwrNotch(1.0),title="Fault mark volume",clab="markdata",cmin=-1.0,cmax=1.0)
+  tend = time.time()
+  print "goFakeData time (sec): ",tend-tbgn
 
 def goSlopes():
   print "goSlopes ..."
@@ -97,11 +111,11 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+  plot3(gx,p2, title="Scanned inline fault slopes",cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+  plot3(gx,p3, title="Scanned crossline fault slopes",cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,sub(1,ep),title="Eigenvalue-based fault planarity",cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
 
 def goScan():
@@ -119,11 +133,11 @@ def goScan():
   writeImage(fpfile,fp)
   writeImage(ftfile,ft)
   plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,fl,title="Fault likelihood",cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+  plot3(gx,fp,title="Fault strike angle",cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
+  plot3(gx,convertDips(ft),title="Fault dip angle",cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
 
 def goThin():
@@ -137,11 +151,11 @@ def goThin():
   writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
   plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,flt,title="Thinned fault likelihood",cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fpt,title="Thinned fault strike angle",cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
+  plot3(gx,convertDips(ftt),title="Thinned fault dip angle",cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
 def goStat():
@@ -172,8 +186,8 @@ def goSmooth():
   p3 = readImage(p3file)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(gsxfile,gsx)
-  plot3(gx,clab="Amplitude")
-  plot3(gsx,clab="Amplitude",png="gsx")
+  plot3(gx,title="Input image for smoothing",clab="Amplitude")
+  plot3(gsx,title="Fault-limited smoothing",clab="Amplitude",png="gsx")
 
 def goSkin():
   print "goSkin ..."
@@ -196,10 +210,11 @@ def goSkin():
   print "number of cells in skins =",FaultSkin.countCells(skins)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,skins)
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,skins=skins,png="skins")
+  plot3(gx,cells=cells,title="Fault cells",png="cells")
+  plot3(gx,skins=skins,title="Fault skins",png="skins")
   for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+    it = "Cells for skin " + str(iskin)
+    plot3(gx,skins=[skin],title=it,links=True,png="skin"+str(iskin))
 
 def goSlip():
   print "goSlip ..."
@@ -227,19 +242,19 @@ def goSlip():
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)
-  plot3(gx,skins=skins,smax=10.0,png="skinss1")
-  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,skins=skins,title="Fault skins for slipping",smax=10.0,png="skinss1")
+  plot3(gx,s1,title="Fault throw",cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(gx,s1,title="Unfaulting vertical shift",cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+  plot3(gx,s2,title="Unfaulting inline shift",cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+  plot3(gx,s3,title="Unfaulting crossline shift",cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
   gw = fsl.unfault([s1,s2,s3],gx)
-  plot3(gx)
-  plot3(gw,clab="Amplitude",png="gw")
+  plot3(gx,title="Input image for fault slipping")
+  plot3(gw,title="Image after unfaulting",clab="Amplitude",png="gw")
 
 def goScanOneStrikeDip():
   print "goScanOneStrikeDip ..."
@@ -303,12 +318,14 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,smax=0.0,
+          title=None,xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  if title!=None:
+    sf.setTitle(title)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)

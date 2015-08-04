@@ -8,8 +8,8 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "/data/seis/fah/"
-
+#_datdir = "/data/seis/fah/"
+_datdir = "/Users/huangherbert/Seismic/Dave_fork/Data/"
 #############################################################################
 # Setup
 
