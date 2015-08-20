@@ -6,8 +6,6 @@ Version: 2014.07.17
 
 from fakeutils import *
 import time
-s1,s2,s3 = getSamplings()
-n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
@@ -50,7 +48,7 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
 #pngDir = "../../png/"
-pngDir = "/Users/huangherbert/Seismic/Dave_fork/Data/png/"
+pngDir = getSeismicDir()+"png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -70,9 +68,10 @@ def goFakeData():
   print "goFakeData ..."
   tbgn = time.time()
   #sequence = 'A' # 1 episode of faulting only
-  sequence = 'OA' # 1 episode of folding, followed by 1 episode of faulting
+  #sequence = 'OA' # 1 episode of folding, followed by 1 episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
+  sequence = 'OAOA' # 2 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults (no more than 3)
   conjugate = False # if True, two large planar faults will intersect
   conical =  False # if True, may want to set nplanar to 0 (or not!)
@@ -80,8 +79,11 @@ def goFakeData():
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
   mark = True # if True, output a feature mark volume
-  gx,p2,p3,fmk = FakeData.seismicAndSlopes3d2014A(
+  print "Image n1,n2,n3= ",n1," ",n2," ",n3
+
+  gx,p2,p3,fmk = FakeData.seismicAndSlopes3d2014A( n1,n2,n3,
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise,mark)
+      
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
   writeImage(p3kfile,p3)
@@ -323,6 +325,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   if title!=None:
     sf.setTitle(title)

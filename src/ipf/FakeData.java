@@ -66,7 +66,7 @@ public class FakeData {
       double[] noises = {0.5};
       int n = sequences.length;
       for (int i=0; i<n; ++i) {
-        float[][][][] f = seismicAndSlopes3d2014A(
+        float[][][][] f = seismicAndSlopes3d2014A(101,102,103,
             sequences[i],nplanars[i],conjugates[i],conicals[i],
             impedances[i],wavelets[i],noises[i],false);
         trace(" f min="+min(f[0])+" max="+max(f[0]));
@@ -99,7 +99,8 @@ public class FakeData {
    * @return array of arrays {f,p2,p3} with image f and slopes p2 and p3.
    */
   public static float[][][][] seismicAndSlopes3d2014A(double noise) {
-    return seismicAndSlopes3d2014A("OA",3,false,false,false,true,noise,false);
+    return seismicAndSlopes3d2014A(101,102,103,
+    		"OA",3,false,false,false,true,noise,false);
   }
 
   /**
@@ -115,11 +116,10 @@ public class FakeData {
    * @return array of arrays {f,p2,p3,[fmk]} with image f and slopes p2 and p3.
    */
   public static float[][][][] seismicAndSlopes3d2014A(
+      int n1, int n2, int n3,
       String sequence, int nplanar, boolean conjugate, boolean conical,
       boolean impedance, boolean wavelet, double noise, boolean mark) {
-    int n1 = 101;
-    int n2 = 102;
-    int n3 = 103;
+	// int n1 = 101; int n2 = 102; int n3 = 103; // original demo case
     int m1 = n1+50;
 
     // Number of episodes in deformation sequence of folding and faulting.
@@ -1037,7 +1037,7 @@ public class FakeData {
     if (mark)
     	copy(fmk,r[4]);
   }
-
+ 
   private static float[][][] combine(
     float depth, float[][][] pa, float[][][] pb) 
   {

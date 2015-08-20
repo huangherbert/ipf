@@ -8,13 +8,14 @@ from common import *
 #############################################################################
 # Internal constants
 
-#_datdir = "/data/seis/fah/"
 _datdir = "/Users/huangherbert/Seismic/Dave_fork/Data/"
+
 #############################################################################
 # Setup
 
 seismicDir = _datdir
-n1,n2,n3 = 101,102,103
+#n1,n2,n3 = 101,102,103   # Small original test case
+n1,n2,n3 = 301,152,203   # Mid-sized volume
 s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
 
 def getSamplings():
@@ -32,8 +33,12 @@ def readImage(name):
   name: base name of image file; e.g., "tpsz"
   """
   fileName = seismicDir+name+".dat"
-  image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
+  n1=ais.readInt()
+  n2=ais.readInt()
+  n3=ais.readInt()
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+  image = zerofloat(n1,n2,n3)
   ais.readFloats(image)
   ais.close()
   return image
@@ -46,6 +51,13 @@ def writeImage(name,image):
   """
   fileName = seismicDir+name+".dat"
   aos = ArrayOutputStream(fileName)
+  n1=len(image[0][0])
+  n2=len(image[0])
+  n3=len(image)
+  print "image n1,n2,n3==", n1, " ", n2, " ", n3
+  aos.writeInt(n1)
+  aos.writeInt(n2)
+  aos.writeInt(n3)
   aos.writeFloats(image)
   aos.close()
   return image
